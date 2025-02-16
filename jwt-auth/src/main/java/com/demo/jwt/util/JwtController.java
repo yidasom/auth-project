@@ -1,5 +1,6 @@
 package com.demo.jwt.util;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,13 +11,16 @@ import org.springframework.web.bind.annotation.*;
  * @author : idasom
  */
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/auth/jwt")
 public class JwtController {
 
     private JwtProvider jwtProvider;
+    private JwtBlacklistService jwtBlacklistService;
 
-    public JwtController(JwtProvider jwtProvider) {
+    @Autowired
+    public JwtController(JwtProvider jwtProvider, JwtBlacklistService jwtBlacklistService) {
         this.jwtProvider = jwtProvider;
+        this.jwtBlacklistService = jwtBlacklistService;
     }
 
     /**
@@ -44,6 +48,15 @@ public class JwtController {
     public ResponseEntity<?> getUserFromToken(@RequestParam String token) {
         String user = jwtProvider.getUsername(token);
         return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    /**
+     * 로그아웃 (토큰을 블랙리스트에 추가)
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestParam String token) {
+        jwtBlacklistService.addToBlacklist(token);
+        return new ResponseEntity<>("로그아웃되었습니다. 클라이언트에서 토큰을 삭제하세요.", HttpStatus.OK);
     }
 
 }

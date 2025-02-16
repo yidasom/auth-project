@@ -28,6 +28,11 @@ public class JwtProvider {
         return Keys.hmacShaKeyFor(key);
     }
 
+    private JwtBlacklistService jwtBlacklistService;
+
+    public JwtProvider(JwtBlacklistService jwtBlacklistService) {
+        this.jwtBlacklistService = jwtBlacklistService;
+    }
 
     // 토큰 생성
     public String generateToken(String username) {
@@ -41,6 +46,9 @@ public class JwtProvider {
 
     // 토큰 validation
     public Boolean validateToken(String token) {
+        if (jwtBlacklistService.isBlacklisted(token)) {
+            return false;
+        }
         try {
             JwtParser parser = Jwts.parser().verifyWith(getSigningKey()).build();
 

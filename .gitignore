@@ -6,3 +6,4 @@ build/
 **/*.class
 
 .DS_Store
+/oauth2-auth/src/main/resources/application.properties

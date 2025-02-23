@@ -1,5 +1,8 @@
-package com.demo.jwt.util;
+package com.demo.jwt;
 
+import com.demo.jwt.util.JwtBlacklistService;
+import com.demo.jwt.util.JwtProvider;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,10 +15,12 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/auth/jwt")
+@SecurityRequirement(name = "bearerAuth")
 public class JwtController {
 
     private JwtProvider jwtProvider;
     private JwtBlacklistService jwtBlacklistService;
+    private JwtService jwtService;
 
     @Autowired
     public JwtController(JwtProvider jwtProvider, JwtBlacklistService jwtBlacklistService) {
@@ -27,9 +32,9 @@ public class JwtController {
      * 로그인 후 JWT 토큰 발급
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestParam String username) {
-        String token = jwtProvider.generateToken(username);
-        return new ResponseEntity<>(token, HttpStatus.OK);
+    public ResponseEntity<?> login(@RequestBody String username) {
+        String token = jwtService.login(username);
+        return ResponseEntity.status(HttpStatus.OK).body(token);
     }
 
     /**

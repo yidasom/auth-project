@@ -14,6 +14,9 @@ import java.io.IOException;
  * @author : idasom
  */
 public class JwtTokenExceptionFilter extends OncePerRequestFilter {
+    public JwtTokenExceptionFilter(JwtProvider jwtProvider) {
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {

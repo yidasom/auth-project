@@ -17,10 +17,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/auth/oauth/*").permitAll()
+                .requestMatchers("/", "/auth/oauth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
         ).oauth2Login(oauth2 -> oauth2
-                .defaultSuccessUrl("/home")
+                .defaultSuccessUrl("/auth/oauth/google/user", true)
         );
         return http.build();
     }

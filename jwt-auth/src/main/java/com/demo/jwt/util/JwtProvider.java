@@ -23,18 +23,19 @@ public class JwtProvider {
     @Value("${jwt.access-token.expiration-time}")
     private long EXPIRATION_TIME;
 
-    private SecretKey getSigningKey() {
-        byte[] key = Base64.getDecoder().decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(key);
-    }
-
     private JwtBlacklistService jwtBlacklistService;
 
     public JwtProvider(JwtBlacklistService jwtBlacklistService) {
         this.jwtBlacklistService = jwtBlacklistService;
     }
 
-    // 토큰 생성
+    private SecretKey getSigningKey() {
+        byte[] key = Base64.getDecoder().decode(SECRET_KEY);
+        return Keys.hmacShaKeyFor(key);
+    }
+
+
+    // JWT 토큰 생성
     public String generateToken(String username) {
         return Jwts.builder()
                 .subject(username)
@@ -44,7 +45,7 @@ public class JwtProvider {
                 .compact();
     }
 
-    // 토큰 validation
+    // JWT 토큰 검증
     public Boolean validateToken(String token) {
         if (jwtBlacklistService.isBlacklisted(token)) {
             return false;
@@ -80,16 +81,16 @@ public class JwtProvider {
         return null;
     }
 
-    // jwt 파싱
+    // JWT 파싱
     private Claims parseClaims(String token) {
         try {
             JwtParser parser = Jwts.parser().verifyWith(getSigningKey()).build();
 
             Jws<Claims> jws = parser.parseSignedClaims(token);
             return jws.getPayload();
-        } catch (JwtException e) {
+        } catch (ExpiredJwtException e) {
             e.printStackTrace();
-            return null;
+            return e.getClaims();
         }
     }
 }

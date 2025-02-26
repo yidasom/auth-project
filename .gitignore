@@ -7,3 +7,4 @@ build/
 
 .DS_Store
 /oauth2-auth/src/main/resources/application.properties
+/sns-auth/src/main/resources/application.properties

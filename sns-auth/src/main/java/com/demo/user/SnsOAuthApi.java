@@ -15,7 +15,7 @@ import java.security.SecureRandom;
 @Getter
 @Setter
 @NoArgsConstructor
-public class SnsDTO {
+public class SnsOAuthApi {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 

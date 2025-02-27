@@ -4,6 +4,12 @@ import com.demo.config.SnsConfig;
 import com.demo.config.SnsType;
 import com.demo.user.SnsOAuthApi.OAuthToken;
 import com.demo.util.UrlConnectionUtil;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.googleapis.util.Utils;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.JsonFactory;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -119,7 +125,6 @@ public class SnsController {
             attributes.addFlashAttribute("message", "잘못 된 접근입니다.");
         }
 
-
         String callBackUri = snsConfig.getCallback(SnsType.KAKAO);
         String redirectURI = URLEncoder.encode(callBackUri, StandardCharsets.UTF_8.toString());
 
@@ -155,83 +160,57 @@ public class SnsController {
             Map<String, Object> kakaoAccount = (Map<String, Object>) mberApi.getKakaoAccount();
             Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
 
-            MbeEmplyrVO mbeEmplyrVO = new MbeEmplyrVO();
-            mbeEmplyrVO.setKakaoEsntlId(mberApi.getId());
-            mbeEmplyrVO.setSnsKnd("kakao");
-
-            // 회원 조회
-            String returnUrl = "";
-            Boolean chkLogin = chkSnsLogin(mbeEmplyrVO);
+//            Boolean chkLogin = chkSnsLogin(mbeEmplyrVO); // 회원 조회 로직
+            Boolean chkLogin = false;
             if (Boolean.TRUE.equals(chkLogin)) {
                 attributes.addFlashAttribute("message", "카카오 아이디를 연동하였습니다.");
-                returnUrl = "redirect:/mbe/emplyr/mypage/saveView.do";
             } else {
                 if (chkLogin != null) {
                     attributes.addFlashAttribute("message", "연동에 실패하였습니다. 이미 연동된 아이디인지 확인부탁드립니다.");
-                    returnUrl = "redirect:/mbe/emplyr/mypage/saveView.do";
                 } else {
-                    LoginVO loginVO = saveSnsUserProfile(mbeEmplyrVO);
-                    returnUrl = "redirect:/login/redirect.do";
-                    if (loginVO != null) {
-                        switch (loginVO.getMberSttus()) {
-                            case "P":
-                                // 사용자정보 세션 저장
-                                session.setAttribute("loginVO", loginVO);
-                                // 기존 메뉴 캐시삭제
-                                loginService.loginCacheReset(loginVO);
-                                break;
-                            case "B":
-                                // 사용자 상태 코드 체크
-                                attributes.addFlashAttribute("message", egovMessageSource.getMessage("fail.common.login.confirm"));
-                                returnUrl = "redirect:/uat/uia/egovLoginUsr.do";
-                                break;
-                            case "F":
-                                // 닉네임 등록 페이지로 이동
-                                returnUrl = "redirect:/cmm/login/sns/join/insertView.do";
-                                // 임시 회원정보 세션 저장
-                                session.setAttribute("tmpLoginVO", loginVO);
-                                break;
-                            default:
-                                break;
-                        }
-                    } else {
-                        attributes.addFlashAttribute("message", egovMessageSource.getMessage("fail.common.sns.login"));
-                    }
+                    // sns user profile 저장 로직
+//                    LoginVO loginVO = memberService.save(value);
+//                    if (loginVO != null) {
+//                        // 캐시 저장 등 이후 로직 추가
+//                    } else {
+//                        attributes.addFlashAttribute("message", "sns 로그인에 실패하였습니다.");
+//                    }
+
                 }
             }
         } else {
             attributes.addFlashAttribute("message", mberApi.getMsg());
         }
+        return ResponseEntity.ok().build();
     }
 
     @RequestMapping(value = "/google/callback", produces = "text/plain; charset=utf-8")
-    public String googleCallback(@ModelAttribute CmmLoginSnsOAuthApi snsOAuthApi, ModelMap model, HttpSession session,
-                                 RedirectAttributes attributes) throws EgovBizException, GeneralSecurityException, IOException, FdlException {
+    public ResponseEntity<?> googleCallback(@ModelAttribute SnsOAuthApi snsOAuthApi, ModelMap model, HttpSession session,
+                                            RedirectAttributes attributes) throws GeneralSecurityException, IOException {
         // state 비교
         if (!snsOAuthApi.getState().equals(session.getAttribute("state"))) {
             attributes.addFlashAttribute("message", "잘못 된 접근입니다.");
-            return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
         // 토큰 발급 API
         String apiURL = "https://oauth2.googleapis.com/token";
-        String params = "grant_type=" + snsOAuthApi.getGrantType();
-        params += "&client_id=" + snsOAuthApi.getGoogleId();
-        params += "&client_secret=" + snsOAuthApi.getGoogleSecret();
-        params += "&redirect_uri=" + snsOAuthApi.getGoogleCallback();
-        params += "&code=" + snsOAuthApi.getCode();
+        StringBuilder sb = new StringBuilder();
+        sb.append("grant_type=").append(URLEncoder.encode(snsOAuthApi.getGrantType(), StandardCharsets.UTF_8))
+                .append("&client_id=").append(URLEncoder.encode(snsConfig.getId(SnsType.GOOGLE), StandardCharsets.UTF_8))
+                .append("&client_secret=").append(URLEncoder.encode(snsConfig.getSecret(SnsType.GOOGLE), StandardCharsets.UTF_8))
+                .append("&redirect_uri=").append(URLEncoder.encode(snsConfig.getCallback(SnsType.GOOGLE), StandardCharsets.UTF_8))
+                .append("&code=").append(URLEncoder.encode(snsOAuthApi.getCode(), StandardCharsets.UTF_8));
 
         Map<String, String> requestHeaders = new HashMap<>();
         requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
-        String responseBody = UrlConnectionUtil.post(apiURL, requestHeaders, params);
+        String responseBody = UrlConnectionUtil.post(apiURL, requestHeaders, sb.toString());
 
         Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-        snsOAuthApi = gson.fromJson(responseBody, CmmLoginSnsOAuthApi.class);
+        snsOAuthApi = gson.fromJson(responseBody, SnsOAuthApi.class);
 
         // 토큰 발급 에러체크
         if (!"".equals(snsOAuthApi.getError())) {
             attributes.addFlashAttribute("message", snsOAuthApi.getErrorDescription());
-            return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
         // 회원 정보 API
@@ -239,9 +218,9 @@ public class SnsController {
         JsonFactory jsonFactory = Utils.getDefaultJsonFactory();
 
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(httpTransport, jsonFactory)
-                .setAudience(Collections.singletonList(snsOAuthApi.getGoogleId())).build();
+                .setAudience(Collections.singletonList(snsConfig.getId(SnsType.GOOGLE))).build();
 
-        GoogleIdToken idToken = verifier.verify(snsOAuthApi.getIdToken());
+        GoogleIdToken idToken = verifier.verify(new OAuthToken().getIdToken());
         if (idToken != null) {
             Payload payload = idToken.getPayload();
 
@@ -249,58 +228,31 @@ public class SnsController {
 //			String email = payload.getEmail();
 //			String name = (String) payload.get("name");
 
-            MbeEmplyrVO mbeEmplyrVO = new MbeEmplyrVO();
-            mbeEmplyrVO.setGoogleEsntlId(userId);
-            mbeEmplyrVO.setSnsKnd("google");
+//            MbeEmplyrVO mbeEmplyrVO = new MbeEmplyrVO();
+//            mbeEmplyrVO.setGoogleEsntlId(userId);
+//            mbeEmplyrVO.setSnsKnd("google");
 
-            // 회원 조회
-            String returnUrl = "";
-            Boolean chkLogin = chkSnsLogin(mbeEmplyrVO);
+//          회원 유무 조회 : Boolean chkLogin = chkSnsLogin(mbeEmplyrVO);
+            Boolean chkLogin = false;
             if (Boolean.TRUE.equals(chkLogin)) {
                 attributes.addFlashAttribute("message", "구글 아이디를 연동하였습니다.");
-                returnUrl = "redirect:/mbe/emplyr/mypage/saveView.do";
             } else {
                 if (chkLogin != null) {
                     attributes.addFlashAttribute("message", "연동에 실패하였습니다. 이미 연동된 아이디인지 확인부탁드립니다.");
-                    returnUrl = "redirect:/mbe/emplyr/mypage/saveView.do";
                 } else {
-
-                    LoginVO loginVO = saveSnsUserProfile(mbeEmplyrVO);
-                    returnUrl = "redirect:/login/redirect.do";
-                    if (loginVO != null) {
-                        switch (loginVO.getMberSttus()) {
-                            case "P":
-                                // 사용자정보 세션 저장
-                                session.setAttribute("loginVO", loginVO);
-                                // 기존 메뉴 캐시삭제
-                                loginService.loginCacheReset(loginVO);
-                                break;
-                            case "B":
-                                // 사용자 상태 코드 체크
-                                attributes.addFlashAttribute("message", egovMessageSource.getMessage("fail.common.login.confirm"));
-                                returnUrl = "redirect:/uat/uia/egovLoginUsr.do";
-                                break;
-                            case "F":
-                                // 닉네임 등록 페이지로 이동
-                                returnUrl = "redirect:/cmm/login/sns/join/insertView.do";
-                                // 임시 회원정보 세션 저장
-                                session.setAttribute("tmpLoginVO", loginVO);
-                                break;
-                            default:
-                                break;
-                        }
-                    } else {
-                        attributes.addFlashAttribute("message", egovMessageSource.getMessage("fail.common.sns.login"));
-                        return "redirect:/uat/uia/egovLoginUsr.do";
-                    }
+                    // sns user profile 저장 로직
+//                    LoginVO loginVO = memberService.save(value);
+//                    if (loginVO != null) {
+//                        // 캐시 저장 등 이후 로직 추가
+//                    } else {
+//                        attributes.addFlashAttribute("message", "sns 로그인에 실패하였습니다.");
+//                    }
                 }
             }
-            return returnUrl;
         } else {
             attributes.addFlashAttribute("message", "Invalid ID token.");
-            return "redirect:/uat/uia/egovLoginUsr.do";
         }
-
+        return ResponseEntity.ok().build();
         // oauth2 방식으로 사용자 정보 조회(권장하지 않음 by구글)
 //		String apiURL;
 //		apiURL = "https://oauth2.googleapis.com/tokeninfo?id_token=" + request.getParameter("token");

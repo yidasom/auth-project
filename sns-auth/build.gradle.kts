@@ -5,5 +5,7 @@ dependencies {
     implementation("com.google.api-client:google-api-client:2.2.0")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 
-    compileOnly("org.projectlombok:lombok:1.18.36")
+
+    compileOnly("org.projectlombok:lombok:1.18.30")
+    annotationProcessor("org.projectlombok:lombok:1.18.30")
 }

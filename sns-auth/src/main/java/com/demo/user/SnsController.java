@@ -53,21 +53,26 @@ public class SnsController {
     }
 
     @GetMapping("/home")
-    public String home(Model model) {
+    public String home(Model model, HttpSession session) {
+        String state = new SnsOAuthApi().getState();
+        session.setAttribute("state", state);
+
         model.addAttribute("naver", Map.of(
                 "id", env.getProperty("sns.login.naver.id"),
                 "secret", env.getProperty("sns.login.naver.secret"),
-                "callback", env.getProperty("sns.login.naver.callback")
+                "callback", env.getProperty("sns.login.naver.callback"),
+                "state", state
         ));
         model.addAttribute("kakao", Map.of(
                 "id", env.getProperty("sns.login.kakao.id"),
-                "secret", env.getProperty("sns.login.kakao.secret"),
-                "callback", env.getProperty("sns.login.kakao.callback")
+                "callback", env.getProperty("sns.login.kakao.callback"),
+                "state", state
         ));
         model.addAttribute("google", Map.of(
                 "id", env.getProperty("sns.login.google.id"),
                 "secret", env.getProperty("sns.login.google.secret"),
-                "callback", env.getProperty("sns.login.google.callback")
+                "callback", env.getProperty("sns.login.google.callback"),
+                "state", state
         ));
 
         model.addAttribute("message", "Hello, Spring Boot!");
@@ -75,22 +80,23 @@ public class SnsController {
         return "home";
     }
 
-    @GetMapping("/naver/callback")
+    @RequestMapping("/naver/callback")
     public ResponseEntity<?> getNaver(@ModelAttribute SnsOAuthApi snsOAuthApi, HttpSession session, RedirectAttributes attributes) throws UnsupportedEncodingException, URISyntaxException {
-        SnsConfig.SnsProperties naver = snsConfig.getType(SnsType.NAVER);
         String state = (String) session.getAttribute("state");
         if (!snsOAuthApi.getState().equals(state)) {
             attributes.addFlashAttribute("message", "잘못 된 접근입니다.");
         }
 
-        String callBackUri = naver.getCallback();
+        SnsConfig snsConfig = new SnsConfig();
+
+        String callBackUri = snsConfig.getId(SnsType.NAVER);
         String redirectURI = URLEncoder.encode(callBackUri, StandardCharsets.UTF_8.toString());
 
         String apiUri = "https://nid.naver.com/oauth2.0/token";
         StringBuilder sb = new StringBuilder();
         sb.append("grant_type=").append(URLEncoder.encode(snsOAuthApi.getGrantType(), StandardCharsets.UTF_8))
-                .append("&client_id=").append(URLEncoder.encode(naver.getId(), StandardCharsets.UTF_8))
-                .append("&client_secret=").append(URLEncoder.encode(naver.getSecret(), StandardCharsets.UTF_8))
+                .append("&client_id=").append(URLEncoder.encode(snsConfig.getId(SnsType.NAVER), StandardCharsets.UTF_8))
+                .append("&client_secret=").append(URLEncoder.encode(snsConfig.getSecret(SnsType.NAVER), StandardCharsets.UTF_8))
                 .append("&redirect_uri=").append(URLEncoder.encode(redirectURI, StandardCharsets.UTF_8))
                 .append("&code=").append(URLEncoder.encode(snsOAuthApi.getCode(), StandardCharsets.UTF_8))
                 .append("&state=").append(URLEncoder.encode(state, StandardCharsets.UTF_8));
@@ -144,22 +150,23 @@ public class SnsController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/kakao/callback")
+    @RequestMapping("/kakao/callback")
     public ResponseEntity<?> getKakao(@ModelAttribute SnsOAuthApi snsOAuthApi, HttpSession session, RedirectAttributes attributes) throws UnsupportedEncodingException {
-        SnsConfig.SnsProperties kakao = snsConfig.getType(SnsType.KAKAO);
         // state 확인
         String state = (String) session.getAttribute("state");
         if (!snsOAuthApi.getState().equals(state)) {
             attributes.addFlashAttribute("message", "잘못 된 접근입니다.");
         }
 
-        String callBackUri = kakao.getCallback();
+        SnsConfig snsConfig = new SnsConfig();
+
+        String callBackUri = snsConfig.getCallback(SnsType.KAKAO);
         String redirectURI = URLEncoder.encode(callBackUri, StandardCharsets.UTF_8.toString());
 
         String apiUri = "https://kauth.kakao.com/oauth/token";
         StringBuilder sb = new StringBuilder();
         sb.append("grant_type=").append(URLEncoder.encode(snsOAuthApi.getGrantType(), StandardCharsets.UTF_8))
-                .append("&client_id=").append(URLEncoder.encode(kakao.getId(), StandardCharsets.UTF_8))
+                .append("&client_id=").append(URLEncoder.encode(snsConfig.getId(SnsType.KAKAO), StandardCharsets.UTF_8))
                 .append("&redirect_uri=").append(URLEncoder.encode(redirectURI, StandardCharsets.UTF_8))
                 .append("&code=").append(URLEncoder.encode(snsOAuthApi.getCode(), StandardCharsets.UTF_8));
 
@@ -215,7 +222,9 @@ public class SnsController {
     @RequestMapping(value = "/google/callback", produces = "text/plain; charset=utf-8")
     public ResponseEntity<?> googleCallback(@ModelAttribute SnsOAuthApi snsOAuthApi, ModelMap model, HttpSession session,
                                             RedirectAttributes attributes) throws GeneralSecurityException, IOException {
-        SnsConfig.SnsProperties google = snsConfig.getType(SnsType.GOOGLE);
+        SnsConfig snsConfig = new SnsConfig();
+
+//        SnsConfig.SnsProperties google = snsConfig.getType(SnsType.GOOGLE);
         // state 비교
         if (!snsOAuthApi.getState().equals(session.getAttribute("state"))) {
             attributes.addFlashAttribute("message", "잘못 된 접근입니다.");
@@ -225,9 +234,9 @@ public class SnsController {
         String apiURL = "https://oauth2.googleapis.com/token";
         StringBuilder sb = new StringBuilder();
         sb.append("grant_type=").append(URLEncoder.encode(snsOAuthApi.getGrantType(), StandardCharsets.UTF_8))
-                .append("&client_id=").append(URLEncoder.encode(google.getId(), StandardCharsets.UTF_8))
-                .append("&client_secret=").append(URLEncoder.encode(google.getSecret(), StandardCharsets.UTF_8))
-                .append("&redirect_uri=").append(URLEncoder.encode(google.getCallback(), StandardCharsets.UTF_8))
+                .append("&client_id=").append(URLEncoder.encode(snsConfig.getId(SnsType.GOOGLE), StandardCharsets.UTF_8))
+                .append("&client_secret=").append(URLEncoder.encode(snsConfig.getSecret(SnsType.GOOGLE), StandardCharsets.UTF_8))
+                .append("&redirect_uri=").append(URLEncoder.encode(snsConfig.getCallback(SnsType.GOOGLE), StandardCharsets.UTF_8))
                 .append("&code=").append(URLEncoder.encode(snsOAuthApi.getCode(), StandardCharsets.UTF_8));
 
         Map<String, String> requestHeaders = new HashMap<>();
@@ -247,7 +256,7 @@ public class SnsController {
         JsonFactory jsonFactory = Utils.getDefaultJsonFactory();
 
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(httpTransport, jsonFactory)
-                .setAudience(Collections.singletonList(google.getId())).build();
+                .setAudience(Collections.singletonList(snsConfig.getId(SnsType.GOOGLE))).build();
 
         GoogleIdToken idToken = verifier.verify(snsOAuthApi.getIdToken());
         if (idToken != null) {

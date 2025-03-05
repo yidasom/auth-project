@@ -1,44 +1,59 @@
 package com.demo.config;
 
-import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * com.demo.config
  *
  * @author : idasom
  */
-@Slf4j
 @Getter
 @Setter
 @Component
-@Configuration
-//@ConfigurationProperties(prefix = "sns.login")
 public class SnsConfig {
-    private Map<String, SnsProperties> types = new HashMap<>(); // 내부 클래스 제거 후 설정용 클래스 사용
+    @Value("${sns.login.naver.callback}")
+    private String naverCallback;
+    @Value("${sns.login.naver.id}")
+    private String naverId;
+    @Value("${sns.login.naver.secret}")
+    private String naverSecret;
 
-    @Getter
-    @Setter
-    public static class SnsProperties {
-        private String id;
-        private String secret;
-        private String callback;
+    @Value("${sns.login.kakao.callback}")
+    private String kakaoCallback;
+    @Value("${sns.login.kakao.id}")
+    private String kakaoId;
+
+    @Value("${sns.login.google.callback}")
+    private String googleCallback;
+    @Value("${sns.login.google.id}")
+    private String googleId;
+    @Value("${sns.login.google.secret}")
+    private String googleSecret;
+
+    public String getId(SnsType type) {
+        return switch (type) {
+            case NAVER -> naverId;
+            case KAKAO -> kakaoId;
+            case GOOGLE -> googleId;
+        };
     }
 
-    @PostConstruct
-    public void init() {
-        log.info("SnsConfig initialized with: {}", types);
+    public String getCallback(SnsType type) {
+        return switch (type) {
+            case NAVER -> naverCallback;
+            case KAKAO -> kakaoCallback;
+            case GOOGLE -> googleCallback;
+        };
     }
 
-    public SnsProperties getType(SnsType type) {
-        log.info("Fetching SnsProperties for type: {}", type.getSnsType().toLowerCase());
-        return types.get(type.getSnsType().toLowerCase());
+    public String getSecret(SnsType type) {
+        return switch (type) {
+            case NAVER -> naverSecret;
+            case GOOGLE -> googleSecret;
+            default -> throw new IllegalStateException("Unexpected value: " + type);
+        };
     }
 }

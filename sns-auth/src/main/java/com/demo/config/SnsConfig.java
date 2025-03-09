@@ -14,23 +14,23 @@ import org.springframework.stereotype.Component;
 @Setter
 @Component
 public class SnsConfig {
-    @Value("sns.login.naver.callback")
+    @Value("${sns.login.naver.callback}")
     private String naverCallback;
-    @Value("sns.login.naver.id")
+    @Value("${sns.login.naver.id}")
     private String naverId;
-    @Value("sns.login.naver.secret")
+    @Value("${sns.login.naver.secret}")
     private String naverSecret;
 
-    @Value("sns.login.kakao.callback")
+    @Value("${sns.login.kakao.callback}")
     private String kakaoCallback;
-    @Value("sns.login.kakao.id")
+    @Value("${sns.login.kakao.id}")
     private String kakaoId;
 
-    @Value("sns.login.google.callback")
+    @Value("${sns.login.google.callback}")
     private String googleCallback;
-    @Value("sns.login.google.id")
+    @Value("${sns.login.google.id}")
     private String googleId;
-    @Value("sns.login.google.secret")
+    @Value("${sns.login.google.secret}")
     private String googleSecret;
 
     public String getId(SnsType type) {

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript" src="https://static.nid.naver.com/js/naverLogin_implicit-1.0.3.js"
+            charset="utf-8"></script>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+</head>
+<body>
+
+<h1 th:text="${message}">Default Message</h1>
+<p>세션 값: <span th:text="${session.state}"></span></p>
+<ul>
+    <li>
+        <img id="btnNaverLogin" height="50" src="http://static.nid.naver.com/oauth/small_g_in.PNG"/>
+    </li>
+    <li>
+        <img id="btnKakaoLogin" src="//k.kakaocdn.net/14/dn/btqCn0WEmI3/nijroPfbpCa4at5EIsjyf0/o.jpg" width="222"/>
+    </li>
+    <li>
+        <img id="btnGoogleLogin"
+             src="https://developers.google.com/identity/images/btn_google_signin_light_normal_web.png"
+             alt="Google 로그인 버튼"/>
+    </li>
+</ul>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        function handleLogin(type, params) {
+            const url = {
+                naver: "https://nid.naver.com/oauth2.0/authorize",
+                kakao: "https://kauth.kakao.com/oauth/authorize",
+                google: "https://accounts.google.com/o/oauth2/v2/auth"
+            };
+
+            if (!url[type]) {
+                alert('잘못된 요청입니다.');
+                return;
+            }
+            debugger
+
+            const form = document.createElement('form');
+            form.method = 'GET';
+            form.action = url[type];
+
+            Object.entries(params).forEach(([key, value]) => {
+                form.innerHTML += `<input type="hidden" name="${key}" value="${value}">`;
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        };
+
+        document.getElementById('btnNaverLogin').addEventListener('click', function() {
+            handleLogin('naver', {
+                response_type: 'NAVER',
+                client_id: `[[${naver.id}]]`,
+                redirect_uri: `[[${naver.callback}]]`,
+                state: `[[${naver.state}]]`
+            });
+        });
+
+        document.getElementById('btnKakaoLogin').addEventListener('click', function() {
+            handleLogin('kakao', {
+                response_type: 'KAKAO',
+                client_id: `[[${kakao.id}]]`,
+                redirect_uri: `[[${kakao.callback}]]`,
+                state: `[[${kakao.state}]]`
+            });
+        });
+
+        document.getElementById('btnGoogleLogin').addEventListener('click', function() {
+            handleLogin('google', {
+                response_type: 'GOOGLE',
+                client_id: `[[${google.id}]]`,
+                redirect_uri: `[[${google.callback}]]`,
+                state: `[[${google.state}]]`,
+                scope: 'scope'
+            });
+        });
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+
+</body>
+</html>

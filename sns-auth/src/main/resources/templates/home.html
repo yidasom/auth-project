@@ -10,7 +10,6 @@
 <body>
 
 <h1 th:text="${message}">Default Message</h1>
-<p>세션 값: <span th:text="${session.state}"></span></p>
 <ul>
     <li>
         <img id="btnNaverLogin" height="50" src="http://static.nid.naver.com/oauth/small_g_in.PNG"/>
@@ -39,7 +38,6 @@
                 alert('잘못된 요청입니다.');
                 return;
             }
-            debugger
 
             const form = document.createElement('form');
             form.method = 'GET';
@@ -55,7 +53,7 @@
 
         document.getElementById('btnNaverLogin').addEventListener('click', function() {
             handleLogin('naver', {
-                response_type: 'NAVER',
+                response_type: 'code',
                 client_id: `[[${naver.id}]]`,
                 redirect_uri: `[[${naver.callback}]]`,
                 state: `[[${naver.state}]]`
@@ -64,7 +62,7 @@
 
         document.getElementById('btnKakaoLogin').addEventListener('click', function() {
             handleLogin('kakao', {
-                response_type: 'KAKAO',
+                response_type: 'token',
                 client_id: `[[${kakao.id}]]`,
                 redirect_uri: `[[${kakao.callback}]]`,
                 state: `[[${kakao.state}]]`
@@ -73,60 +71,14 @@
 
         document.getElementById('btnGoogleLogin').addEventListener('click', function() {
             handleLogin('google', {
-                response_type: 'GOOGLE',
+                response_type: 'code',
                 client_id: `[[${google.id}]]`,
                 redirect_uri: `[[${google.callback}]]`,
                 state: `[[${google.state}]]`,
-                scope: 'scope'
+                scope: 'https://www.googleapis.com/auth/userinfo.profile'
             });
         });
     });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

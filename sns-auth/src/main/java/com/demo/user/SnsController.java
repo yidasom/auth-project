@@ -14,19 +14,21 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,7 +55,13 @@ public class SnsController {
     @GetMapping("/home")
     public String home(Model model, HttpServletResponse response) {
         String state = new SnsOAuthApi().getState();
+        String nonce = new SnsOAuthApi().getNonce();
         Cookie cookie = new Cookie("state", state);
+        cookie.setMaxAge(1800); // 30분
+        cookie.setHttpOnly(false);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+        cookie = new Cookie("nonce", nonce);
         cookie.setMaxAge(1800); // 30분
         cookie.setHttpOnly(false);
         cookie.setPath("/");
@@ -74,7 +82,8 @@ public class SnsController {
                 "id", env.getProperty("sns.login.google.id"),
                 "secret", env.getProperty("sns.login.google.secret"),
                 "callback", env.getProperty("sns.login.google.callback"),
-                "state", state
+                "state", state,
+                "nonce", nonce
         ));
         model.addAttribute("message", "Hello, Spring Boot!");
 
@@ -82,8 +91,7 @@ public class SnsController {
     }
 
     @RequestMapping("/naver/callback")
-    @ResponseBody
-    public String getNaver(@ModelAttribute SnsOAuthApi snsOAuthApi, @CookieValue(value = "state", required = false) String state, RedirectAttributes attributes) throws UnsupportedEncodingException, URISyntaxException {
+    public String getNaver(@ModelAttribute SnsOAuthApi snsOAuthApi, @CookieValue(value = "state", required = false) String state, Model model, RedirectAttributes attributes, HttpServletResponse response) throws UnsupportedEncodingException {
         if (!snsOAuthApi.getState().equals(state)) {
             attributes.addFlashAttribute("message", "잘못 된 접근입니다.");
         }
@@ -140,17 +148,29 @@ public class SnsController {
 //                    }
                 }
             }
+            Cookie cookie = new Cookie("access_token", snsOAuthApi.getAccessToken());
+            cookie.setMaxAge(1800); // 30분
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+
+            cookie = new Cookie("service_provider", (SnsType.NAVER).toString());
+            cookie.setMaxAge(1800); // 30분
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+
+            model.addAttribute("type", (SnsType.NAVER).toString());
+            model.addAttribute("profile", mberApi.getResponse());
         } else {
             attributes.addFlashAttribute("message", mberApi.getMessage());
         }
-
         return "callback";
 //        return ResponseEntity.ok().build();
     }
 
     @RequestMapping("/kakao/callback")
-    @ResponseBody
-    public String getKakao(@ModelAttribute SnsOAuthApi snsOAuthApi, @CookieValue(value = "state", required = false) String state, RedirectAttributes attributes) throws UnsupportedEncodingException {
+    public String getKakao(@ModelAttribute SnsOAuthApi snsOAuthApi, @CookieValue(value = "state", required = false) String state, Model model, RedirectAttributes attributes) throws UnsupportedEncodingException {
         if (!snsOAuthApi.getState().equals(state)) {
             attributes.addFlashAttribute("message", "잘못 된 접근입니다.");
         }
@@ -204,6 +224,9 @@ public class SnsController {
 
                 }
             }
+            model.addAttribute("type", (SnsType.KAKAO).toString());
+            model.addAttribute("profile", profile);
+
         } else {
             attributes.addFlashAttribute("message", mberApi.getMsg());
         }
@@ -212,8 +235,8 @@ public class SnsController {
     }
 
     @RequestMapping(value = "/google/callback", produces = "text/plain; charset=utf-8")
-    public String googleCallback(@ModelAttribute SnsOAuthApi snsOAuthApi, @CookieValue(value = "state", required = false) String state,
-                                 RedirectAttributes attributes) throws GeneralSecurityException, IOException {
+    public String googleCallback(@ModelAttribute SnsOAuthApi snsOAuthApi, @CookieValue(value = "state", required = false) String state, @CookieValue(value = "nonce", required = false) String nonce,
+                                 RedirectAttributes attributes, HttpServletRequest request, Model model) throws GeneralSecurityException, IOException {
 
 //        SnsConfig.SnsProperties google = snsConfig.getType(SnsType.GOOGLE);
         // state 비교
@@ -222,17 +245,16 @@ public class SnsController {
         }
 
         // 토큰 발급 API
-        String apiURL = "https://oauth2.googleapis.com/token";
-        StringBuilder sb = new StringBuilder();
-        sb.append("grant_type=").append(URLEncoder.encode(snsOAuthApi.getGrantType(), StandardCharsets.UTF_8))
-                .append("&client_id=").append(URLEncoder.encode(snsConfig.getId(SnsType.GOOGLE), StandardCharsets.UTF_8))
-                .append("&client_secret=").append(URLEncoder.encode(snsConfig.getSecret(SnsType.GOOGLE), StandardCharsets.UTF_8))
-                .append("&redirect_uri=").append(URLEncoder.encode(snsConfig.getCallback(SnsType.GOOGLE), StandardCharsets.UTF_8))
-                .append("&code=").append(URLEncoder.encode(snsOAuthApi.getCode(), StandardCharsets.UTF_8));
+        String apiUri = "https://oauth2.googleapis.com/token";
+        String params = "grant_type=" + snsOAuthApi.getGrantType();
+        params += "&client_id=" + snsConfig.getId(SnsType.GOOGLE);
+        params += "&client_secret=" + snsConfig.getSecret(SnsType.GOOGLE);
+        params += "&redirect_uri=" + snsConfig.getCallback(SnsType.GOOGLE);
+        params += "&code=" + request.getParameter("code").toString();
 
         Map<String, String> requestHeaders = new HashMap<>();
         requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
-        String responseBody = UrlConnectionUtil.post(apiURL, requestHeaders, sb.toString());
+        String responseBody = UrlConnectionUtil.post(apiUri, requestHeaders, params);
 
         Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
         snsOAuthApi = gson.fromJson(responseBody, SnsOAuthApi.class);
@@ -251,15 +273,15 @@ public class SnsController {
 
         GoogleIdToken idToken = verifier.verify(snsOAuthApi.getIdToken());
         if (idToken != null) {
+            Map<String, String> profile = new HashMap<>();
             Payload payload = idToken.getPayload();
 
-            String userId = payload.getSubject();
-//			String email = payload.getEmail();
-//			String name = (String) payload.get("name");
+//            String userId = payload.getSubject();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
 
-//            MbeEmplyrVO mbeEmplyrVO = new MbeEmplyrVO();
-//            mbeEmplyrVO.setGoogleEsntlId(userId);
-//            mbeEmplyrVO.setSnsKnd("google");
+            profile.put("email", email);
+            profile.put("name", name);
 
 //          회원 유무 조회 : Boolean chkLogin = chkSnsLogin(mbeEmplyrVO);
             Boolean chkLogin = false;
@@ -278,11 +300,13 @@ public class SnsController {
 //                    }
                 }
             }
+            model.addAttribute("type", (SnsType.GOOGLE).toString());
+            model.addAttribute("profile", profile);
         } else {
             attributes.addFlashAttribute("message", "Invalid ID token.");
         }
         return "callback";
-//        return ResponseEntity.ok().build();
+
         // oauth2 방식으로 사용자 정보 조회(권장하지 않음 by구글)
 //		String apiURL;
 //		apiURL = "https://oauth2.googleapis.com/tokeninfo?id_token=" + request.getParameter("token");
@@ -290,4 +314,71 @@ public class SnsController {
 //		String responseBody = UrlConnectionUtil.get(apiURL, requestHeaders);
 //		System.out.println(responseBody);
     }
+
+    @RequestMapping("/naver/logout")
+    public String logoutNaver(@CookieValue(value = "access_token", required = false) String access_token, HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        // token 삭제
+        try {
+            String apiUri = "https://nid.naver.com/oauth2.0/token";
+            String params = "grant_type=delete";
+            params += "&client_id=" + snsConfig.getId(SnsType.NAVER);
+            params += "&client_secret=" + snsConfig.getSecret(SnsType.NAVER);
+            params += "&access_token=" + access_token;
+            params += "&service_provider=" + (SnsType.NAVER).toString();
+
+            Map<String, String> requestHeaders = new HashMap<>();
+            requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
+            String responseBody = UrlConnectionUtil.post(apiUri, requestHeaders, params);
+
+            // cookie 삭제
+            deleteCookie("access_token", response);
+            deleteCookie("service_provider", response);
+            deleteCookie("state", response);
+
+            request.getSession().invalidate();
+
+            if (responseBody != null && responseBody.contains("error")) {
+                return responseBody;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "redirect:/home";
+    }
+
+    @RequestMapping("/kakao/logout")
+    public String logoutKakao(@CookieValue(value = "access_token", required = false) String access_token, HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        // token 삭제
+        try {
+            String apiUri = "https://kapi.kakao.com/v1/user/logout";
+
+            Map<String, String> requestHeaders = new HashMap<>();
+            requestHeaders.put("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
+            requestHeaders.put("Authorization", access_token);
+            String responseBody = UrlConnectionUtil.post(apiUri, requestHeaders, null);
+
+            if (responseBody != null && responseBody.contains("error")) {
+                return responseBody;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "redirect:/home";
+    }
+
+    @RequestMapping("/google/logout")
+    public String logoutGoogle(@CookieValue(value = "access_token", required = false) String access_token) {
+        return null;
+    }
+
+    private void deleteCookie(String name, HttpServletResponse response) {
+        Cookie cookie = new Cookie(name, null);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+    }
+
 }

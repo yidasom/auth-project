@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
@@ -236,7 +237,7 @@ public class SnsController {
 
     @RequestMapping(value = "/google/callback", produces = "text/plain; charset=utf-8")
     public String googleCallback(@ModelAttribute SnsOAuthApi snsOAuthApi, @CookieValue(value = "state", required = false) String state, @CookieValue(value = "nonce", required = false) String nonce,
-                                 RedirectAttributes attributes, HttpServletRequest request, Model model) throws GeneralSecurityException, IOException {
+                                 RedirectAttributes attributes, HttpServletRequest request, HttpServletResponse response, Model model) throws GeneralSecurityException, IOException {
 
 //        SnsConfig.SnsProperties google = snsConfig.getType(SnsType.GOOGLE);
         // state 비교
@@ -300,6 +301,12 @@ public class SnsController {
 //                    }
                 }
             }
+            Cookie cookie = new Cookie("access_token", snsOAuthApi.getAccessToken());
+            cookie.setMaxAge(1800); // 30분
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+
             model.addAttribute("type", (SnsType.GOOGLE).toString());
             model.addAttribute("profile", profile);
         } else {
@@ -371,7 +378,13 @@ public class SnsController {
 
     @RequestMapping("/google/logout")
     public String logoutGoogle(@CookieValue(value = "access_token", required = false) String access_token) {
-        return null;
+        String accessToken = access_token.replace("Bearer ", "");
+        String revokeUrl = "https://accounts.google.com/o/oauth2/revoke?token=" + accessToken;
+
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.postForEntity(revokeUrl, null, String.class);
+
+        return "redirect:/home";
     }
 
     private void deleteCookie(String name, HttpServletResponse response) {

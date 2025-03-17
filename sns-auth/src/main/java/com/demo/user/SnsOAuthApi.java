@@ -46,5 +46,7 @@ public class SnsOAuthApi {
     private String expiresIn = "";
     // 구글 아이디 토큰
     private String idToken = "";
+    // 구글 appliction name
+    private String applicationName = "";
 
 }

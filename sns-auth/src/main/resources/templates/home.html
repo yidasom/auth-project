@@ -62,7 +62,7 @@
 
         document.getElementById('btnKakaoLogin').addEventListener('click', function() {
             handleLogin('kakao', {
-                response_type: 'token',
+                response_type: 'code',
                 client_id: `[[${kakao.id}]]`,
                 redirect_uri: `[[${kakao.callback}]]`,
                 state: `[[${kakao.state}]]`
@@ -75,10 +75,12 @@
                 client_id: `[[${google.id}]]`,
                 redirect_uri: `[[${google.callback}]]`,
                 state: `[[${google.state}]]`,
-                scope: 'https://www.googleapis.com/auth/userinfo.profile'
+                nonce: `[[${google.nonce}]]`,
+                scope: 'openid profile email'
             });
         });
     });
+
 
 
 

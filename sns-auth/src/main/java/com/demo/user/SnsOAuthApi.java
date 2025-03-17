@@ -18,11 +18,13 @@ public class SnsOAuthApi {
     public SnsOAuthApi() {
         SecureRandom random = new SecureRandom();
         this.state = new BigInteger(130, random).toString();
+        this.nonce = new BigInteger(130, random).toString();
     }
 
     private String responseType = "code";
 
     private String state = "";
+    private String nonce = "";
 
     private String scope = "email profile openid";
 
@@ -44,5 +46,7 @@ public class SnsOAuthApi {
     private String expiresIn = "";
     // 구글 아이디 토큰
     private String idToken = "";
+    // 구글 appliction name
+    private String applicationName = "";
 
 }

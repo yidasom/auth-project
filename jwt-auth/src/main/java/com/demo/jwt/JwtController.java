@@ -1,11 +1,22 @@
 package com.demo.jwt;
 
+import com.demo.jwt.dto.LoginDTO;
+import com.demo.jwt.dto.UserDTO;
+import com.demo.jwt.service.JwtService;
 import com.demo.jwt.util.JwtBlacklistService;
 import com.demo.jwt.util.JwtProvider;
+import com.demo.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -18,12 +29,18 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "bearerAuth")
 public class JwtController {
 
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
+
+    private final int accessKeyTime = 60 * 60;  // 60분  // 쿠기가 살아있는 시간
+    private final int refreshKeyTime = 60 * 60 * 24 * 2; // 2일
+
     private JwtProvider jwtProvider;
     private JwtBlacklistService jwtBlacklistService;
     private JwtService jwtService;
 
     @Autowired
-    public JwtController(JwtProvider jwtProvider, JwtBlacklistService jwtBlacklistService) {
+    public JwtController(AuthenticationManagerBuilder authenticationManagerBuilder, JwtProvider jwtProvider, JwtBlacklistService jwtBlacklistService) {
+        this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.jwtProvider = jwtProvider;
         this.jwtBlacklistService = jwtBlacklistService;
     }
@@ -32,9 +49,35 @@ public class JwtController {
      * 로그인 후 JWT 토큰 발급
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody String username) {
-        String token = jwtService.login(username);
-        return ResponseEntity.status(HttpStatus.OK).body(token);
+    public String login(HttpServletRequest request, HttpServletResponse response, @RequestBody LoginDTO loginDTO) throws Exception {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        UserDTO userDTO = null;
+        try {
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                    loginDTO.getUsername()
+                    , SecurityUtil.encryptPassword(String.valueOf(loginDTO.getPassword()))
+            );
+            // 인증 확인
+            Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+
+            // 인증 확인된 정보를 securityContextHolder에 저장
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            userDTO = (UserDTO) authentication.getDetails();
+
+            jwtService.updateAfterUserLoginSuccess(userDTO.getUserSeq(), "", request);
+
+//            String token = jwtService.login(userDTO);
+
+            return "redirect:/home";
+
+//        } catch (UsernameNotFoundException | BadCredentialsException | DisabledException | AccountExpiredException e) {
+//            TokenModel tokenModel = new TokenModel();
+//            tokenModel.setErrorMessage(e.getMessage());
+//            return new ResponseEntity<>(userDetail, httpHeaders, 460);
+        } catch (Exception e) {
+//            log.error("", e);
+            return null;
+        }
     }
 
     /**

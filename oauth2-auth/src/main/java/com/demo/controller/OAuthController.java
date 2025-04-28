@@ -19,4 +19,6 @@ public class OAuthController {
     public OAuth2User getUser(@AuthenticationPrincipal OAuth2User oAuth2User) {
         return oAuth2User;
     }
+//    @GetMapping("/azure/user")
+
 }

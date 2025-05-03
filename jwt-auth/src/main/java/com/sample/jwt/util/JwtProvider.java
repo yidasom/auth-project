@@ -1,4 +1,4 @@
-package com.demo.jwt.util;
+package com.sample.jwt.util;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.Jwts.SIG;

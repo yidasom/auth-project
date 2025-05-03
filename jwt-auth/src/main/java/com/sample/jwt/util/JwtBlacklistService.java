@@ -1,4 +1,4 @@
-package com.demo.jwt.util;
+package com.sample.jwt.util;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;

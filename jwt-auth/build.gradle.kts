@@ -16,7 +16,7 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
     implementation("org.projectlombok:lombok:1.18.20")
     implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
-    implementation("org.modelmapper:modelmapper:3.1.1'")
+    implementation("org.modelmapper:modelmapper:3.1.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
     testImplementation("org.assertj:assertj-core:3.24.2")

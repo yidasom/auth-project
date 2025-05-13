@@ -20,13 +20,14 @@
 <br/>
 
 ### 📂 디렉토리 구조
-```
+```bash
 auth-project/
-├── frontend/           # React 기반의 프론트엔드 코드
-├── jwt-auth/           # JWT 인증 관련 구현
-├── oauth2-auth/        # OAuth2 인증 관련 구현
-├── sns-auth/           # SNS 인증 관련 구현
-├── build.gradle.kts    # Gradle 빌드 설정 파일
-└── settings.gradle.kts # Gradle 설정 파일
+├── frontend/             # React 기반의 프론트엔드 코드
+├── jwt-auth/             # JWT 인증 관련 구현
+├── oauth2-auth/          # OAuth2 인증 관련 구현
+├── sns-auth/             # SNS 인증 관련 구현
+├── build.gradle.kts      # Gradle 빌드 설정 파일
+├── settings.gradle.kts   # 멀티 모듈 프로젝트 설정
+└── settings.gradle.kts   # Gradle 설정 파일
 
 ```

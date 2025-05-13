@@ -1,21 +1,23 @@
-package com.sample.jwt.dto;
+package com.demo.member.dto;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
- * com.demo.jwt.dto
+ * com.demo.member.dto
  *
  * @author : idasom
- * @data : 4/28/25
+ * @data : 5/11/25
  */
 @Getter
 @Setter
 @SuperBuilder
+@NoArgsConstructor
 @ToString(callSuper = true)
-public class UserDTO {
+public class MemberDTO {
     private String uuid;
 
     private String username;
@@ -24,4 +26,5 @@ public class UserDTO {
     // token 시간
     private long accessExp;
     private long refreshExp;
+
 }

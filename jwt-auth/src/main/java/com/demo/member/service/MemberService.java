@@ -1,6 +1,8 @@
 package com.demo.member.service;
 
-import com.sample.jwt.dto.UserDTO;
+import com.demo.member.dto.MemberDTO;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * com.demo.member.service
@@ -9,5 +11,9 @@ import com.sample.jwt.dto.UserDTO;
  * @data : 5/3/25
  */
 public interface MemberService {
-    UserDTO updateUser(UserDTO model) throws Exception;
+    MemberDTO updateUser(MemberDTO model) throws Exception;
+
+    void updateAfterUserLoginSuccess(String uuid, String s, HttpServletRequest request) throws Exception;
+
+    UserDetails loadUserByUsername(String id);
 }

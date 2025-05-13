@@ -3,6 +3,7 @@ package com.demo.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,6 +21,8 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    private final AuthenticationProvider customAuthenticationProvider;
+
     @Bean
     protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable()) // csrf 비활성화 (쿠키 사용 X)
@@ -39,6 +42,7 @@ public class SecurityConfig {
                 // ALWAYS: 항상 세션 생성, IF_REQUIRED: 필요시 생성(기본), NEVER: 스프링 시큐리티가 생성하지 않지만, 기존에 존재하면 사용
                 // STATLESS: 시큐리티 생성하지않고, 기존 것을 사용하지 않음 (JWT와 같은 토큰 방식 사용)
                 .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(customAuthenticationProvider)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/", "/auth/auth/login", "/auth/auth/logout",

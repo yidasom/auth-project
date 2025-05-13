@@ -16,6 +16,12 @@ import java.util.Collection;
 @Getter
 @Setter
 public class LoginDTO implements UserDetails {
+    private int loginFailCnt;
+
+    public void setLoginFailCnt(int loginFailCnt) {
+        this.loginFailCnt = loginFailCnt;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.getAuthorities();

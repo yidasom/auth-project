@@ -27,7 +27,6 @@ auth-project/
 ├── oauth2-auth/          # OAuth2 인증 관련 구현
 ├── sns-auth/             # SNS 인증 관련 구현
 ├── build.gradle.kts      # Gradle 빌드 설정 파일
-├── settings.gradle.kts   # 멀티 모듈 프로젝트 설정
-└── settings.gradle.kts   # Gradle 설정 파일
+└── settings.gradle.kts   # 멀티 모듈 프로젝트 설정
 
 ```

@@ -34,8 +34,8 @@ import java.util.Set;
 @Slf4j
 public class CustomAuthenticationProvider implements AuthenticationProvider {
 
-    private final ModelMapper modelMapper;
-    private final MemberService memberService;
+    private ModelMapper modelMapper;
+    private MemberService memberService;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {

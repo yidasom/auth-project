@@ -31,8 +31,8 @@ import java.util.UUID;
 @Slf4j
 public class MemberServiceImpl implements MemberService {
 
-    private final MemberRepository memberRepository;
-    private final ModelMapper modelMapper;
+    private MemberRepository memberRepository;
+    private ModelMapper modelMapper;
 
 
     /**

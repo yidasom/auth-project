@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
  *
  * @author : idasom
  */
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+@SpringBootApplication
 @EnableJpaAuditing
 public class Application {
     public static void main(String[] args) {

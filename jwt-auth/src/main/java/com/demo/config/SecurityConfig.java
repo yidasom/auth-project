@@ -1,9 +1,9 @@
 package com.demo.config;
 
+import com.demo.config.authentication.CustomAuthenticationProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -21,7 +21,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final AuthenticationProvider customAuthenticationProvider;
+    private final CustomAuthenticationProvider customAuthenticationProvider;
 
     @Bean
     protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/", "/auth/auth/login", "/auth/auth/logout",
-                                "/v3/api-docs/**", "/swagger-resources/**",
+                                "/v3/api-docs/**", "/api-docs/**", "/swagger-resources/**",
                                 "/swagger-ui/**", "/webjars/**"
                         ).permitAll() // Swagger, API 문서 허용
                         .anyRequest().authenticated()

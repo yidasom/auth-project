@@ -12,7 +12,7 @@ import java.util.Date;
  * @data : 5/12/25
  */
 @Component
-public class JwtProviderRedis {
+public class JwtRedisProvider {
     public String generateToken(String username, long expSeconds) {
         return Jwts.builder()
                 .setSubject(username)

@@ -3,6 +3,7 @@ package com.demo.auth;
 import com.demo.auth.dto.LoginDTO;
 import com.demo.member.dto.MemberDTO;
 import com.demo.member.service.MemberService;
+import com.demo.util.JwtTokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.MessageDigest;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Base64;
-import java.util.Date;
 
 /**
  * com.demo.auth
@@ -40,17 +38,6 @@ public class AuthController {
     private MemberService memberService;
 
     private final RedisTemplate<String, String> redisTemplate;
-
-
-    private final int accessKeyTime = 60 * 60;  // 60분
-
-    private final int refreshKeyTime = 60 * 60 * 24 * 2; // 2일
-
-    public Date makeExpDate(long accessTokenInTime) throws Exception {
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
-        ZonedDateTime exp = now.plusSeconds(accessTokenInTime);
-        return Date.from(exp.toInstant());
-    }
 
 
     /**
@@ -99,10 +86,8 @@ public class AuthController {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             memberDTO = (MemberDTO) authentication.getDetails();
 
-            Date accessTime = makeExpDate(accessKeyTime);
-            memberDTO.setAccessExp(accessTime.getTime());
-            Date refreshTime = makeExpDate(refreshKeyTime);
-            memberDTO.setRefreshExp(refreshTime.getTime());
+            // create cookie
+            JwtTokenUtil.createCookie(memberDTO, authentication, response);
 
             // cookie 에 저장 jwt token만드는 로직 필요
 //            ResponseCookie accessCookie = ResponseCookie.from("accessToken", )

@@ -2,6 +2,7 @@ package com.demo.config;
 
 import com.demo.config.authentication.CustomAuthenticationProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.config.Customizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,8 +27,8 @@ public class SecurityConfig {
     @Bean
     protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable()) // csrf 비활성화 (쿠키 사용 X)
-                .cors(cors -> cors.disable()) // cors 비활성화 (front와 연결시 따로 설정)
-                .httpBasic(httpbasic -> httpbasic.disable()) // 기본 인증 로그인 비활ㅁ
+                .cors(Customizer.withDefaults()) // cors 비활성화 (front와 연결시 따로 설정)
+                .httpBasic(httpbasic -> httpbasic.disable()) // 기본 인증 로그인 비활
 //                .formLogin(login -> login.disable()) // 사용하지 않을 때
                 .formLogin(login -> login.loginPage("/auth/login")
                         .defaultSuccessUrl("/main")
@@ -45,7 +46,7 @@ public class SecurityConfig {
                 .authenticationProvider(customAuthenticationProvider)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/auth/auth/login", "/auth/auth/logout",
+                                "/", "/api/auth/login", "/api/auth/logout",
                                 "/v3/api-docs/**", "/api-docs/**", "/swagger-resources/**",
                                 "/swagger-ui/**", "/webjars/**"
                         ).permitAll() // Swagger, API 문서 허용

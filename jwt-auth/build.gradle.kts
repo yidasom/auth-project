@@ -19,7 +19,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.30")
     implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
     implementation("org.modelmapper:modelmapper:3.1.1")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4")
 
     runtimeOnly("com.h2database:h2:2.1.214")
 

@@ -1,5 +1,6 @@
 package com.demo.util;
 
+import com.demo.auth.provider.JwtTokenProvider;
 import com.demo.member.dto.MemberDTO;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseCookie;
@@ -17,14 +18,20 @@ public class JwtTokenUtil {
 
     private static final int refreshKeyTime = 60 * 60 * 24 * 2; // 2일
 
+    private static JwtTokenProvider jwtTokenProvider;
+
+    public JwtTokenUtil(JwtTokenProvider jwtTokenProvider) {
+        this.jwtTokenProvider = jwtTokenProvider;
+    }
+
     public static Date makeExpDate(long accessTokenInTime) throws Exception {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
         ZonedDateTime exp = now.plusSeconds(accessTokenInTime);
         return Date.from(exp.toInstant());
     }
 
-    public static ResponseCookie setCookie(String name, HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from(name, "refreshToken")
+    public static ResponseCookie setCookie(String name, String accessToken) {
+        ResponseCookie cookie = ResponseCookie.from(name, accessToken)
                 .httpOnly(true)
                 .secure(false)
                 .path("/")
@@ -41,8 +48,8 @@ public class JwtTokenUtil {
         memberDTO.setAccessExp(accessTime.getTime());
         memberDTO.setRefreshExp(refreshTime.getTime());
 
-        ResponseCookie accessCookie = setCookie("accessToken", response);
-        ResponseCookie refreshCookie = setCookie("refreshToken", response);
+        ResponseCookie accessCookie = setCookie("accessToken", jwtTokenProvider.generateToken(authentication, memberDTO, accessTime, "accessToken"));
+        ResponseCookie refreshCookie = setCookie("refreshToken", jwtTokenProvider.generateToken(authentication, memberDTO, refreshTime, "refreshToken"));
 
         response.addHeader("Set-Cookie", refreshCookie.toString());
         response.addHeader("Set-Cookie", accessCookie.toString());

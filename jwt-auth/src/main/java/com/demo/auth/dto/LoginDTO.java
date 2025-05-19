@@ -1,5 +1,6 @@
 package com.demo.auth.dto;
 
+import com.demo.member.entity.Member;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,7 +16,7 @@ import java.util.Collection;
  */
 @Getter
 @Setter
-public class LoginDTO implements UserDetails {
+public class LoginDTO extends Member implements UserDetails {
     private int loginFailCnt;
 
     public void setLoginFailCnt(int loginFailCnt) {

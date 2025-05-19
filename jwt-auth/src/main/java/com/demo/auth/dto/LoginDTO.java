@@ -28,13 +28,13 @@ public class LoginDTO extends Member implements UserDetails {
         return this.getAuthorities();
     }
 
-    @Override
-    public String getPassword() {
-        return null;
-    }
-
-    @Override
-    public String getUsername() {
-        return null;
-    }
+//    @Override
+//    public String getPassword() {
+//        return null;
+//    }
+//
+//    @Override
+//    public String getUsername() {
+//        return null;
+//    }
 }

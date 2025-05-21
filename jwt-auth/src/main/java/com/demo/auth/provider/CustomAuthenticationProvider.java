@@ -1,4 +1,4 @@
-package com.demo.config.authentication;
+package com.demo.auth.provider;
 
 import com.demo.auth.dto.LoginDTO;
 import com.demo.member.dto.MemberDTO;

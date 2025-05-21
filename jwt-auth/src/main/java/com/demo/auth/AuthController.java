@@ -37,7 +37,6 @@ public class AuthController {
 
     private MemberService memberService;
 
-    private final RedisTemplate<String, String> redisTemplate;
 
 
     /**
@@ -86,8 +85,13 @@ public class AuthController {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             memberDTO = (MemberDTO) authentication.getDetails();
 
-            // create cookie
-            JwtTokenUtil.createCookie(memberDTO, authentication, response);
+            if ("cookie".equals(loginDTO.getStoreType())) {
+                // create cookie
+                JwtTokenUtil.createCookie(memberDTO, authentication, response);
+            } else if ("redis".equals(loginDTO.getStoreType())) {
+                // create redis
+                JwtTokenUtil.createRedis(memberDTO, authentication);
+            }
 
             // cookie 에 저장 jwt token만드는 로직 필요
 //            ResponseCookie accessCookie = ResponseCookie.from("accessToken", )
@@ -97,7 +101,6 @@ public class AuthController {
 //                            .sameSite("Strict")
 //                            .maxAge(accessKeyTime)
 //                            .build();
-            // redis 저장
 
 
             memberService.updateAfterUserLoginSuccess(memberDTO.getUuid(), "", request);

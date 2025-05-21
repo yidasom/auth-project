@@ -9,28 +9,29 @@ import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 /**
  * swagger
  */
 @Configuration
 public class SwaggerConfig {
+
+    private SecurityScheme createAPIKeyScheme() {
+        return new SecurityScheme().type(SecurityScheme.Type.HTTP)
+                .bearerFormat("JWT")
+                .scheme("bearer");
+    }
+
     @Bean
-    public OpenAPI openAPI() {
-        Info info = new Info()
-                .title("데모 프로젝트 API Document")
-                .version("v0.0.1")
-                .description("데모 프로젝트의 API 명세서입니다.");
+    public OpenAPI openAPI(){
         return new OpenAPI()
-                .components(new Components())
-                .addSecurityItem(new SecurityRequirement().addList("Authentication"))
-                .addServersItem(new Server().url("http://localhost:8081")) // 상대 경로 추가 및 CORS 에러 방지
-                .components(new Components()
-                        .addSecuritySchemes("Authentication",
-                                new io.swagger.v3.oas.models.security.SecurityScheme()
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("bearer")
-                                        .bearerFormat("JWT")))
-                .info(info);
+                .servers(List.of(new Server().url("http://localhost:8081")))
+                .addSecurityItem(new SecurityRequirement().addList("JWT"))
+                .components(new Components().addSecuritySchemes("JWT", createAPIKeyScheme()))
+                .info(new Info().title("API Token 프로젝트")
+                        .description("API Token 프로젝트")
+                        .version("v0.0.1"));
     }
 
 }

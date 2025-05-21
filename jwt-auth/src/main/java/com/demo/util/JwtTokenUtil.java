@@ -3,10 +3,12 @@ package com.demo.util;
 import com.demo.auth.provider.JwtTokenProvider;
 import com.demo.member.dto.MemberDTO;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -19,6 +21,7 @@ public class JwtTokenUtil {
     private static final int refreshKeyTime = 60 * 60 * 24 * 2; // 2일
 
     private static JwtTokenProvider jwtTokenProvider;
+    private static RedisTemplate<String, Object> redisTemplate;
 
     public JwtTokenUtil(JwtTokenProvider jwtTokenProvider) {
         this.jwtTokenProvider = jwtTokenProvider;
@@ -55,4 +58,11 @@ public class JwtTokenUtil {
         response.addHeader("Set-Cookie", accessCookie.toString());
     }
 
+    public static void createRedis(MemberDTO memberDTO, Authentication authentication) throws Exception {
+        Date accessTime = makeExpDate(accessKeyTime);
+        memberDTO.setAccessExp(accessTime.getTime());
+        String token = jwtTokenProvider.generateToken(authentication, memberDTO, accessTime, "accessToken");
+
+        redisTemplate.opsForValue().set(token, memberDTO, Duration.ofMinutes(30));
+    }
 }

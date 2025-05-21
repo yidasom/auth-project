@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serializable;
 import java.util.Collection;
 
 /**
@@ -16,8 +17,9 @@ import java.util.Collection;
  */
 @Getter
 @Setter
-public class LoginDTO extends Member implements UserDetails {
+public class LoginDTO extends Member implements UserDetails, Serializable {
     private int loginFailCnt;
+    private String storeType; // cookie, redis
 
     public void setLoginFailCnt(int loginFailCnt) {
         this.loginFailCnt = loginFailCnt;

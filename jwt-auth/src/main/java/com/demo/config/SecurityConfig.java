@@ -1,7 +1,9 @@
 package com.demo.config;
 
-import com.demo.config.authentication.CustomAuthenticationProvider;
+import com.demo.auth.filter.JwtAuthenticationFilter;
+import com.demo.auth.provider.CustomAuthenticationProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.config.Customizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +12,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /**
@@ -23,6 +26,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final CustomAuthenticationProvider customAuthenticationProvider;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Bean
     protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -44,6 +48,7 @@ public class SecurityConfig {
                 // STATLESS: 시큐리티 생성하지않고, 기존 것을 사용하지 않음 (JWT와 같은 토큰 방식 사용)
                 .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(customAuthenticationProvider)
+                .addFilterBefore(new JwtAuthenticationFilter(redisTemplate), UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/", "/api/auth/login", "/api/auth/logout",
